@@ -60,17 +60,25 @@ class ORB:
 
                 matches = bf.knnMatch(des, des_frame, k=2)
                 good_matches = []
-                for m, n in matches:
+                for m_n in matches:
+                    if len(m_n) < 2:
+                        continue
+                    m, n = m_n
                     if m.distance < 0.75 * n.distance:
                         good_matches.append(m)
-
+                # Find the highest matches
                 if len(good_matches) > best_match_count:
                     best_match_count = len(good_matches)
                     best_class_name = name
 
+            # Decide if the object is recognized
+            THRESHOLD_MATCHES = 13 
+            if best_match_count < THRESHOLD_MATCHES:
+                best_class_name = "Unknowed"
+
             # Show text on screen
             cv2.putText(frame, f"Objeto: {best_class_name}", (30, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
             cv2.imshow("ORB Classification", frame)
 
             # Accumulation of metrics
@@ -107,7 +115,7 @@ class ORB:
 
         plt.figure(figsize=(15, 5 * rows))
         for i, (rgb_img, kp, name) in enumerate(zip(self.rgb_images, self.keypoints_list, self.class_names)):
-            img_kp = cv2.drawKeypoints(rgb_img, kp, None, color=(255, 0, 0), flags=0)
+            img_kp = cv2.drawKeypoints(rgb_img, kp, None, color=(0, 255, 0), flags=0)
             plt.subplot(rows, cols, i + 1)
             plt.imshow(img_kp)
             plt.title(name)
