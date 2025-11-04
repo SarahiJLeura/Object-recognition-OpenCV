@@ -30,7 +30,7 @@ class SIFT:
 
         print(f"[INFO] Computed {len(self.targets)} SIFT descriptors for target images.")
 
-    def compare_keypoints(self, video, threshold_matches=40):
+    def compare_keypoints(self, video, threshold_matches=100):
         """
         Compare features between video frames and target images.
         
@@ -75,7 +75,6 @@ class SIFT:
                 if len(good_matches) > best_match_count:
                     best_match_count = len(good_matches)
                     best_class_name = name
-
             # If not enough matches, label as "Unknowed"
             if best_match_count < threshold_matches:
                 best_class_name = "Unknowed"
