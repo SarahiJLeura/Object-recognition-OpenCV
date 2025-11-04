@@ -33,7 +33,7 @@ img_path = "VisionComputacional/Examenes/Ex02/resources/train/hog_img"
 hog_paths = os.listdir("VisionComputacional/Examenes/Ex02/resources/train/hog_img")
 print(hog_paths)
 hog_images = []
-hog_labels = ["calendar", "calendar", "calendar", "notebook", "notebook", "notebook", "raid", "raid", "raid"]
+hog_labels = ["calendar", "calendar", "calendar","calendar",  "notebook", "notebook", "notebook", "notebook", "raid", "raid", "raid", "raid", "raid"]
 
 hog_images = read_images(img_path, hog_paths)
 
