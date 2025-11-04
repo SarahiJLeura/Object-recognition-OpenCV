@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import time
 from sklearn import svm
+from sklearn.svm import LinearSVC
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 import joblib
@@ -14,7 +15,7 @@ class HOG_SVM:
             _winSize=(64, 128),
             _blockSize=(16, 16),
             _blockStride=(8, 8),
-            _cellSize=(8, 8),
+            _cellSize=(4, 4),
             _nbins=9
         )
         self.model = None
@@ -25,6 +26,7 @@ class HOG_SVM:
         descriptors = []
         for img in self.trainingImages:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            gray = cv2.equalizeHist(gray) # Normalize
             resized = cv2.resize(gray, (64, 128))
             desc = self.hog.compute(resized)
             descriptors.append(desc.flatten())
@@ -38,12 +40,12 @@ class HOG_SVM:
         print("[INFO] Training SVM model...")
         param_grid = {
             'C': [0.1, 1, 10],
-            'kernel': ['linear', 'rbf'],
+            'kernel': ['linear', 'rbf', 'poly'],
             'gamma': ['scale', 'auto']
         }
         # Find the best parameters to create a model
         grid = GridSearchCV(
-            svm.SVC(probability=True),
+            svm.SVC(probability=True, random_state=42),
             param_grid,
             refit=True,
             cv=3,
@@ -59,12 +61,22 @@ class HOG_SVM:
         self.model, self.label_encoder = joblib.load(path)
         print("[INFO] SVM model successfully uploaded.")
 
-    def predict_frame(self, frame):
+    def predict_frame(self, frame, threshold=0.4):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         resized = cv2.resize(gray, (64, 128))
         desc = self.hog.compute(resized).flatten().reshape(1, -1)
-        pred = self.model.predict(desc)[0]
-        class_name = self.label_encoder.inverse_transform([pred])[0]
+
+        # Get probabilities of prediction
+        probs = self.model.predict_proba(desc)[0]
+        pred_idx = np.argmax(probs)
+        max_prob = probs[pred_idx]
+        print(max_prob)
+
+        if max_prob < threshold:
+            class_name = "Unknown"
+        else:
+            class_name = self.label_encoder.inverse_transform([pred_idx])[0]
+
         return class_name
 
     def classify_video(self, cap):
@@ -79,10 +91,9 @@ class HOG_SVM:
 
             # Resize the image only for the classifier no to show it
             label = self.predict_frame(frame)
-
             # Draw in the original image
-            cv2.putText(frame, label, (50, 50), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, 2)
+            cv2.putText(frame, f"{label}", (50, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
             cv2.imshow("Detection HOG + SVM", frame)
 
